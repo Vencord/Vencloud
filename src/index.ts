@@ -100,7 +100,7 @@ fastify.get("/settings", async (request, response) => {
 
 fastify.put("/settings", async (request, response) => {
     if (request.headers["content-type"] !== "application/octet-stream") {
-        return response.status(413).send({ error: "Content type must be `application/octet-stream`" });
+        return response.status(415).send({ error: "Content type must be `application/octet-stream`" });
     }
 
     if ((request.body as Buffer).byteLength > SIZE_LIMIT) {
