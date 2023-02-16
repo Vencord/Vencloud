@@ -100,11 +100,11 @@ fastify.get("/settings", async (request, response) => {
 
 fastify.put("/settings", async (request, response) => {
     if (request.headers["content-type"] !== "application/octet-stream") {
-        return response.status(400).send({ error: "Content type must be `application/octet-stream`" });
+        return response.status(413).send({ error: "Content type must be `application/octet-stream`" });
     }
 
-    if ((request.body as Buffer).length > SIZE_LIMIT) {
-        return response.status(400).send({ error: "Settings are too large" });
+    if ((request.body as Buffer).byteLength > SIZE_LIMIT) {
+        return response.status(413).send({ error: "Settings are too large" });
     }
 
     const now = Date.now();
