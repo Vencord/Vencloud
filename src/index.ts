@@ -30,6 +30,11 @@ const fastify = Fastify();
 const redis = new Redis(process.env.REDIS_URI!);
 
 const SIZE_LIMIT = parseInt(process.env.SIZE_LIMIT!);
+const ABOUT = `
+<h1>Vencord API</h1>
+<p>This is the API used by Vencord features like Settings Sync. If you are wondering why requests are sent here, it's because you explicitly opted into Settings Sync. You can disable it at any point!</p>
+<p>But no worries, this api <a href="/basic-privacy-policy">takes your privacy serious</a> and is <a href="https://github.com/Vencord/Backend">free and open source!</a></p>
+`.trim();
 
 function hash(data: string) {
     return crypto.createHash("sha1").update(data).digest("hex");
@@ -187,6 +192,6 @@ fastify.get("/callback", async (request, response) => {
 });
 // #endregion
 
-fastify.get("/", () => ({ shiggy: true }));
+fastify.get("/", (_, response) => response.type("text/html").send(ABOUT));
 
 await fastify.listen({ host: process.env.HOST!, port: parseInt(process.env.PORT!) });
