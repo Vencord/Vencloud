@@ -18,3 +18,4 @@ lerna-debug.log*
 *.tsbuildinfo
 
 redis-data
+docker-compose.override.yml
