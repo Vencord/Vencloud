@@ -189,4 +189,4 @@ fastify.get("/callback", async (request, response) => {
 
 fastify.get("/", () => ({ shiggy: true }));
 
-await fastify.listen({ port: parseInt(process.env.PORT!) });
+await fastify.listen({ host: process.env.HOST!, port: parseInt(process.env.PORT!) });
