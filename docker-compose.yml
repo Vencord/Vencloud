@@ -1,0 +1,18 @@
+version: "3.1"
+
+services:
+    redis:
+        image: redis:alpine
+        container_name: redis
+        restart: always
+        volumes:
+            - ./redis-data:/data
+
+    backend:
+        image: vencord/backend
+        build: .
+        restart: always
+        env_file:
+            - .env
+        depends_on:
+            - redis
