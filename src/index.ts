@@ -40,7 +40,7 @@ function hash(data: string) {
     return crypto.createHash("sha1").update(data).digest("hex");
 }
 
-await fastify.register(cors);
+await fastify.register(cors, { exposedHeaders: ["ETag"] });
 
 // #region request decoration & correction
 fastify.decorateRequest("userId", null);
