@@ -88,6 +88,17 @@ fastify.addHook("onRequest", async (request, response) => {
     request.userId = userId;
 });
 
+fastify.head("/settings", async (request, response) => {
+    const userIdHash = hash(process.env.PEPPER_SETTINGS! + request.userId);
+    const written = await redis.hget(`settings:${userIdHash}`, "written");
+
+    if (!written) {
+        return response.status(404);
+    }
+
+    return response.header("ETag", written);
+});
+
 fastify.get("/settings", async (request, response) => {
     const userIdHash = hash(process.env.PEPPER_SETTINGS! + request.userId);
     const [settings, written] = await Promise.all([
@@ -126,17 +137,6 @@ fastify.delete("/settings", async (request, response) => {
     await redis.del(`settings:${hash(process.env.PEPPER_SETTINGS! + request.userId)}`);
 
     return response.status(204);
-});
-
-fastify.head("/settings", async (request, response) => {
-    const userIdHash = hash(process.env.PEPPER_SETTINGS! + request.userId);
-    const written = await redis.hget(`settings:${userIdHash}`, "written");
-
-    if (!written) {
-        return response.status(404);
-    }
-
-    return response.header("ETag", written);
 });
 // #endregion
 
