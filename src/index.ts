@@ -93,10 +93,10 @@ fastify.head("/settings", async (request, reply) => {
     const written = await redis.hget(`settings:${userIdHash}`, "written");
 
     if (!written) {
-        return reply.status(404);
+        return reply.status(404).send();
     }
 
-    return reply.header("ETag", written);
+    return reply.header("ETag", written).send();
 });
 
 fastify.get("/settings", async (request, reply) => {
