@@ -57,7 +57,7 @@ declare module "fastify" {
 
 // #region settings
 // hook to force authorization when dealing with settings requests
-fastify.addHook("onRequest", async (request, response) => {
+fastify.addHook("onRequest", async (request, reply) => {
     if (request.routerPath !== "/settings") {
         return;
     }
@@ -65,7 +65,7 @@ fastify.addHook("onRequest", async (request, response) => {
     const authToken = request.headers.authorization;
 
     if (!authToken) {
-        return response.status(401).send({ error: "Missing authorization" });
+        return reply.status(401).send({ error: "Missing authorization" });
     }
 
     const auth = Buffer.from(authToken, "base64")
@@ -73,7 +73,7 @@ fastify.addHook("onRequest", async (request, response) => {
         .split(":");
 
     if (auth.length !== 2) {
-        return response.status(401).send({ error: "Invalid authorization" });
+        return reply.status(401).send({ error: "Invalid authorization" });
     }
 
     const userId = auth[0];
@@ -82,24 +82,24 @@ fastify.addHook("onRequest", async (request, response) => {
     const storedSecret = await redis.get(`secrets:${hash(process.env.PEPPER_SECRETS! + userId)}`);
 
     if (storedSecret !== secret) {
-        return response.status(401).send({ error: "Invalid authorization" });
+        return reply.status(401).send({ error: "Invalid authorization" });
     }
 
     request.userId = userId;
 });
 
-fastify.head("/settings", async (request, response) => {
+fastify.head("/settings", async (request, reply) => {
     const userIdHash = hash(process.env.PEPPER_SETTINGS! + request.userId);
     const written = await redis.hget(`settings:${userIdHash}`, "written");
 
     if (!written) {
-        return response.status(404);
+        return reply.status(404);
     }
 
-    return response.header("ETag", written);
+    return reply.header("ETag", written);
 });
 
-fastify.get("/settings", async (request, response) => {
+fastify.get("/settings", async (request, reply) => {
     const userIdHash = hash(process.env.PEPPER_SETTINGS! + request.userId);
     const [settings, written] = await Promise.all([
         redis.hgetBuffer(`settings:${userIdHash}`, "value"),
@@ -107,20 +107,20 @@ fastify.get("/settings", async (request, response) => {
     ]);
 
     if (!settings) {
-        return response.status(404).send({ error: "No settings currently synchronized" });
+        return reply.status(404).send({ error: "No settings currently synchronized" });
     }
 
-    response.header("ETag", written!);
+    reply.header("ETag", written!);
     return settings!;
 });
 
-fastify.put("/settings", async (request, response) => {
+fastify.put("/settings", async (request, reply) => {
     if (request.headers["content-type"] !== "application/octet-stream") {
-        return response.status(415).send({ error: "Content type must be `application/octet-stream`" });
+        return reply.status(415).send({ error: "Content type must be `application/octet-stream`" });
     }
 
     if ((request.body as Buffer).byteLength > SIZE_LIMIT) {
-        return response.status(413).send({ error: "Settings are too large" });
+        return reply.status(413).send({ error: "Settings are too large" });
     }
 
     const now = Date.now();
@@ -133,16 +133,16 @@ fastify.put("/settings", async (request, response) => {
     return { written: now };
 });
 
-fastify.delete("/settings", async (request, response) => {
+fastify.delete("/settings", async (request, reply) => {
     await redis.del(`settings:${hash(process.env.PEPPER_SETTINGS! + request.userId)}`);
 
-    return response.status(204);
+    return reply.status(204);
 });
 // #endregion
 
 // #region discord oauth
-fastify.get("/authorize", async (request, response) => {
-    return response.redirect(
+fastify.get("/authorize", async (request, reply) => {
+    return reply.redirect(
         302,
         `https://discord.com/api/oauth2/authorize?client_id=${process.env.DISCORD_CLIENT_ID}&redirect_uri=${encodeURIComponent(
             process.env.DISCORD_REDIRECT_URI!
@@ -150,11 +150,11 @@ fastify.get("/authorize", async (request, response) => {
     );
 });
 
-fastify.get("/callback", async (request, response) => {
+fastify.get("/callback", async (request, reply) => {
     const code = (request.query as any).code as string;
 
     if (!code) {
-        return response.status(400).send({ error: "Missing code" });
+        return reply.status(400).send({ error: "Missing code" });
     }
 
     const body = new URLSearchParams();
@@ -173,7 +173,7 @@ fastify.get("/callback", async (request, response) => {
     });
 
     if (!res.ok) {
-        return response.status(400).send({ error: "Invalid code" });
+        return reply.status(400).send({ error: "Invalid code" });
     }
 
     const { access_token: accessToken } = await res.json() as { access_token: string; };
@@ -185,7 +185,7 @@ fastify.get("/callback", async (request, response) => {
     });
 
     if (!userRes.ok) {
-        return response.status(500).send({ error: "Failed to get user" });
+        return reply.status(500).send({ error: "Failed to get user" });
     }
 
     const { id: userId } = await userRes.json() as { id: string; };
@@ -203,6 +203,6 @@ fastify.get("/callback", async (request, response) => {
 });
 // #endregion
 
-fastify.get("/", (_, response) => response.type("text/html").send(ABOUT));
+fastify.get("/", (_, reply) => reply.type("text/html").send(ABOUT));
 
 await fastify.listen({ host: process.env.HOST!, port: parseInt(process.env.PORT!) });
