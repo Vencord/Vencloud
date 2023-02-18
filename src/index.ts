@@ -127,6 +127,17 @@ fastify.delete("/settings", async (request, response) => {
 
     return response.status(204);
 });
+
+fastify.head("/settings", async (request, response) => {
+    const userIdHash = hash(process.env.PEPPER_SETTINGS! + request.userId);
+    const written = await redis.hget(`settings:${userIdHash}`, "written");
+
+    if (!written) {
+        return response.status(404);
+    }
+
+    return response.header("ETag", written);
+});
 // #endregion
 
 // #region discord oauth
