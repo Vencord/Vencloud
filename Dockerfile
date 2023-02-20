@@ -1,13 +1,11 @@
-FROM node:lts-slim
-
-RUN npm install --global pnpm
+FROM golang:2.20
 
 WORKDIR /app
 
-ADD package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile
+ADD go.mod go.sum ./
+RUN go mod download
 
 ADD . ./
-RUN pnpm compile
+RUN go build -o /backend
 
-CMD ["node", "dist/index.js"]
+CMD ["/backend"]
