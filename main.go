@@ -131,10 +131,13 @@ func main() {
 
         settings, err := rdb.HMGet(c.Context(), "settings:" + hash(PEPPER_SETTINGS + userId), "value", "written").Result()
 
-        if err == redis.Nil {
-            return c.Status(404).Send(nil)
-        } else if err != nil {
+        // we shouldn't expect an error here, HMGet doesn't return one
+        if err != nil {
             panic(err)
+        }
+
+        if settings[0] == nil {
+            return c.Status(404).Send(nil)
         }
 
         // value is compressed data, written is a timestamp
