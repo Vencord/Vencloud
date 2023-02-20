@@ -160,7 +160,7 @@ func main() {
 
         userId := c.Context().UserValue("userId").(string)
 
-        now := time.Now().Unix()
+        now := time.Now().UnixMilli()
 
         _, err := rdb.HSet(c.Context(), "settings:" + hash(PEPPER_SETTINGS + userId), map[string]interface{}{
             "value": c.Body(),
