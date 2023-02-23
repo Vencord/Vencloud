@@ -243,13 +243,9 @@ func main() {
 
         userId := userResult.Id
 
-        secretR := rdb.Get(c.Context(), "secrets:" + hash(PEPPER_SECRETS + userId))
+        secret, err := rdb.Get(c.Context(), "secrets:" + hash(PEPPER_SECRETS + userId)).Result()
 
-        var secret string
-
-        if secretR.Err() == redis.Nil {
-            secret = secretR.Val()
-        } else {
+        if err == redis.Nil {
             key := make([]byte, 48)
 
             _, err := rand.Read(key)
