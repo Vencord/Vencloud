@@ -143,6 +143,10 @@ func main() {
         // value is compressed data, written is a timestamp
         value, written := []byte(settings[0].(string)), settings[1].(string)
 
+        if ifm := c.Get("if-none-match"); ifm == written {
+            return c.SendStatus(304)
+        }
+
         c.Set("Content-Type", "application/octet-stream")
         c.Set("ETag", written)
         return c.Send(value)
