@@ -271,7 +271,7 @@ func main() {
     app.Get("/oauth/settings", func(c *fiber.Ctx) error {
         return c.JSON(&fiber.Map{
             "clientId": DISCORD_CLIENT_ID,
-            "redirectUri": DISCORD_REDIRECT_URI
+            "redirectUri": DISCORD_REDIRECT_URI,
         })
     })
     // #endregion
