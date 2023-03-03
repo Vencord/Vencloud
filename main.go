@@ -193,7 +193,7 @@ func main() {
     // #endregion
 
     // #region discord oauth
-    app.Get("/callback", func(c *fiber.Ctx) error {
+    app.Get("/oauth/callback", func(c *fiber.Ctx) error {
         code := c.Query("code")
 
         if code == "" {
@@ -265,6 +265,13 @@ func main() {
 
         return c.JSON(&fiber.Map{
             "secret": secret,
+        })
+    })
+
+    app.Get("/oauth/settings", func(c *fiber.Ctx) error {
+        return c.JSON(&fiber.Map{
+            "clientId": DISCORD_CLIENT_ID,
+            "redirectUri": DISCORD_REDIRECT_URI
         })
     })
     // #endregion
