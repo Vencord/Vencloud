@@ -2,7 +2,11 @@ module github.com/Vencord/Backend
 
 go 1.20
 
-require github.com/gofiber/fiber/v2 v2.42.0
+require (
+	github.com/gofiber/fiber/v2 v2.42.0
+	github.com/imroc/req/v3 v3.32.0
+	github.com/redis/go-redis/v9 v9.0.2
+)
 
 require (
 	github.com/andybalholm/brotli v1.0.4 // indirect
@@ -14,7 +18,6 @@ require (
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
-	github.com/imroc/req/v3 v3.32.0 // indirect
 	github.com/klauspost/compress v1.15.9 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.17 // indirect
@@ -26,7 +29,6 @@ require (
 	github.com/quic-go/qtls-go1-19 v0.2.0 // indirect
 	github.com/quic-go/qtls-go1-20 v0.1.0 // indirect
 	github.com/quic-go/quic-go v0.32.0 // indirect
-	github.com/redis/go-redis/v9 v9.0.2 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/savsgio/dictpool v0.0.0-20221023140959-7bf2e61cea94 // indirect
 	github.com/savsgio/gotils v0.0.0-20220530130905-52f3993e8d6d // indirect
