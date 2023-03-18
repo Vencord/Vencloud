@@ -277,7 +277,7 @@ func main() {
     // #endregion
 
     app.Get("/", func(c *fiber.Ctx) error {
-        return c.SendFile("static/index.html")
+        return c.Redirect("https://vencord.vendicated.dev/cloud", 307)
     })
 
     app.Listen(HOST + ":" + PORT)
