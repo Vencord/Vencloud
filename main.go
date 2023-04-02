@@ -35,6 +35,7 @@ func main() {
     HOST := os.Getenv("HOST")
     PORT := os.Getenv("PORT")
     REDIS_URI := os.Getenv("REDIS_URI")
+    ROOT_REDIRECT := os.Getenv("ROOT_REDIRECT")
 
     DISCORD_CLIENT_ID := os.Getenv("DISCORD_CLIENT_ID")
     DISCORD_CLIENT_SECRET := os.Getenv("DISCORD_CLIENT_SECRET")
@@ -277,7 +278,7 @@ func main() {
     // #endregion
 
     app.Get("/", func(c *fiber.Ctx) error {
-        return c.Redirect("https://vencord.vendicated.dev/cloud", 307)
+        return c.Redirect(ROOT_REDIRECT, 307)
     })
 
     app.Listen(HOST + ":" + PORT)
