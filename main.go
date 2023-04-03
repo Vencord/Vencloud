@@ -19,267 +19,282 @@ import (
 )
 
 type DiscordAccessTokenResult struct {
-    AccessToken string `json:"access_token"`
+	AccessToken string `json:"access_token"`
 }
 
 type DiscordUserResult struct {
-    Id string `json:"id"`
+	Id string `json:"id"`
 }
 
+var rdb *redis.Client
+
 func hash(s string) string {
-    return fmt.Sprintf("%x", sha1.Sum([]byte(s)))
+	return fmt.Sprintf("%x", sha1.Sum([]byte(s)))
+}
+
+func requireAuth(c *fiber.Ctx) error {
+	authToken := c.Get("Authorization")
+
+	if authToken == "" {
+		return c.Status(401).JSON(&fiber.Map{
+			"error": "Missing authorization",
+		})
+	}
+
+	// decode base64 token and split by :
+	// token[0] = username
+	// token[1] = password
+	token, err := base64.StdEncoding.DecodeString(authToken)
+
+	if err != nil {
+		return c.Status(401).JSON(&fiber.Map{
+			"error": "Invalid authorization",
+		})
+	}
+
+	tokenStr := string(token)
+	tokenSplit := strings.Split(tokenStr, ":")
+
+	if len(tokenSplit) != 2 {
+		return c.Status(401).JSON(&fiber.Map{
+			"error": "Invalid authorization",
+		})
+	}
+
+	userId := tokenSplit[0]
+	secret := tokenSplit[1]
+
+	storedSecret, err := rdb.Get(c.Context(), "secrets:"+hash(os.Getenv("PEPPER_SECRETS")+userId)).Result()
+
+	if err == redis.Nil {
+		return c.Status(401).JSON(&fiber.Map{
+			"error": "Invalid authorization",
+		})
+	} else if err != nil {
+		panic(err)
+	}
+
+	if storedSecret != secret {
+		return c.Status(401).JSON(&fiber.Map{
+			"error": "Invalid authorization",
+		})
+	}
+
+	c.Context().SetUserValue("userId", userId)
+
+	return c.Next()
 }
 
 func main() {
-    // environment
-    HOST := os.Getenv("HOST")
-    PORT := os.Getenv("PORT")
-    REDIS_URI := os.Getenv("REDIS_URI")
-    ROOT_REDIRECT := os.Getenv("ROOT_REDIRECT")
+	// environment
+	HOST := os.Getenv("HOST")
+	PORT := os.Getenv("PORT")
+	REDIS_URI := os.Getenv("REDIS_URI")
+	ROOT_REDIRECT := os.Getenv("ROOT_REDIRECT")
 
-    DISCORD_CLIENT_ID := os.Getenv("DISCORD_CLIENT_ID")
-    DISCORD_CLIENT_SECRET := os.Getenv("DISCORD_CLIENT_SECRET")
-    DISCORD_REDIRECT_URI := os.Getenv("DISCORD_REDIRECT_URI")
+	DISCORD_CLIENT_ID := os.Getenv("DISCORD_CLIENT_ID")
+	DISCORD_CLIENT_SECRET := os.Getenv("DISCORD_CLIENT_SECRET")
+	DISCORD_REDIRECT_URI := os.Getenv("DISCORD_REDIRECT_URI")
 
-    PEPPER_SECRETS := os.Getenv("PEPPER_SECRETS")
-    PEPPER_SETTINGS := os.Getenv("PEPPER_SETTINGS")
+	PEPPER_SECRETS := os.Getenv("PEPPER_SECRETS")
+	PEPPER_SETTINGS := os.Getenv("PEPPER_SETTINGS")
 
-    slRaw, _ := strconv.ParseInt(os.Getenv("SIZE_LIMIT"), 10, 0)
-    SIZE_LIMIT := int(slRaw)
+	slRaw, _ := strconv.ParseInt(os.Getenv("SIZE_LIMIT"), 10, 0)
+	SIZE_LIMIT := int(slRaw)
 
-    app := fiber.New()
-    rdb := redis.NewClient(&redis.Options{
-        Addr:     REDIS_URI,
-    })
-    req := reqHttp.C()
+	app := fiber.New()
+	rdb = redis.NewClient(&redis.Options{
+		Addr: REDIS_URI,
+	})
+	req := reqHttp.C()
 
-    app.Use(cors.New(cors.Config{
-        ExposeHeaders: "ETag",
-    }))
-    app.Use(logger.New())
+	app.Use(cors.New(cors.Config{
+		ExposeHeaders: "ETag",
+	}))
+	app.Use(logger.New())
 
-    // #region settings
-    app.All("/settings", func(c *fiber.Ctx) error {
-        authToken := c.Get("Authorization")
+	// #region settings
+	app.All("/settings", requireAuth)
 
-        if authToken == "" {
-            return c.Status(401).JSON(&fiber.Map{
-                "error": "Missing authorization",
-            })
-        }
+	app.Head("/settings", func(c *fiber.Ctx) error {
+		userId := c.Context().UserValue("userId").(string)
 
-        // decode base64 token and split by :
-        // token[0] = username
-        // token[1] = password
-        token, err := base64.StdEncoding.DecodeString(authToken)
+		written, err := rdb.HGet(c.Context(), "settings:"+hash(PEPPER_SETTINGS+userId), "written").Result()
 
-        if err != nil {
-            return c.Status(401).JSON(&fiber.Map{
-                "error": "Invalid authorization",
-            })
-        }
+		if err == redis.Nil {
+			return c.Status(404).Send(nil)
+		} else if err != nil {
+			panic(err)
+		}
 
-        tokenStr := string(token)
-        tokenSplit := strings.Split(tokenStr, ":")
+		c.Set("ETag", written)
+		return c.SendStatus(204)
+	})
 
-        if len(tokenSplit) != 2 {
-            return c.Status(401).JSON(&fiber.Map{
-                "error": "Invalid authorization",
-            })
-        }
+	app.Get("/settings", func(c *fiber.Ctx) error {
+		userId := c.Context().UserValue("userId").(string)
 
-        userId := tokenSplit[0]
-        secret := tokenSplit[1]
+		settings, err := rdb.HMGet(c.Context(), "settings:"+hash(PEPPER_SETTINGS+userId), "value", "written").Result()
 
-        storedSecret, err := rdb.Get(c.Context(), "secrets:" + hash(PEPPER_SECRETS + userId)).Result()
+		// we shouldn't expect an error here, HMGet doesn't return one
+		if err != nil {
+			panic(err)
+		}
 
-        if err == redis.Nil {
-            return c.Status(401).JSON(&fiber.Map{
-                "error": "Invalid authorization",
-            })
-        } else if err != nil {
-            panic(err)
-        }
+		if settings[0] == nil {
+			return c.Status(404).Send(nil)
+		}
 
-        if storedSecret != secret {
-            return c.Status(401).JSON(&fiber.Map{
-                "error": "Invalid authorization",
-            })
-        }
+		// value is compressed data, written is a timestamp
+		value, written := []byte(settings[0].(string)), settings[1].(string)
 
-        c.Context().SetUserValue("userId", userId)
+		if ifm := c.Get("if-none-match"); ifm == written {
+			return c.SendStatus(304)
+		}
 
-        return c.Next()
-    })
+		c.Set("Content-Type", "application/octet-stream")
+		c.Set("ETag", written)
+		return c.Send(value)
+	})
 
-    app.Head("/settings", func(c *fiber.Ctx) error {
-        userId := c.Context().UserValue("userId").(string)
+	app.Put("/settings", func(c *fiber.Ctx) error {
+		if c.Get("Content-Type") != "application/octet-stream" {
+			return c.Status(415).JSON(&fiber.Map{
+				"error": "Content type must be application/octet-stream",
+			})
+		}
 
-        written, err := rdb.HGet(c.Context(), "settings:" + hash(PEPPER_SETTINGS + userId), "written").Result()
+		if len(c.Body()) > SIZE_LIMIT {
+			return c.Status(413).JSON(&fiber.Map{
+				"error": "Settings are too large",
+			})
+		}
 
-        if err == redis.Nil {
-            return c.Status(404).Send(nil)
-        } else if err != nil {
-            panic(err)
-        }
+		userId := c.Context().UserValue("userId").(string)
 
-        c.Set("ETag", written)
-        return c.SendStatus(204)
-    })
+		now := time.Now().UnixMilli()
 
-    app.Get("/settings", func(c *fiber.Ctx) error {
-        userId := c.Context().UserValue("userId").(string)
+		_, err := rdb.HSet(c.Context(), "settings:"+hash(PEPPER_SETTINGS+userId), map[string]interface{}{
+			"value":   c.Body(),
+			"written": now,
+		}).Result()
 
-        settings, err := rdb.HMGet(c.Context(), "settings:" + hash(PEPPER_SETTINGS + userId), "value", "written").Result()
+		if err != nil {
+			panic(err)
+		}
 
-        // we shouldn't expect an error here, HMGet doesn't return one
-        if err != nil {
-            panic(err)
-        }
+		return c.JSON(&fiber.Map{
+			"written": now,
+		})
+	})
 
-        if settings[0] == nil {
-            return c.Status(404).Send(nil)
-        }
+	app.Delete("/settings", func(c *fiber.Ctx) error {
+		userId := c.Context().UserValue("userId").(string)
 
-        // value is compressed data, written is a timestamp
-        value, written := []byte(settings[0].(string)), settings[1].(string)
+		rdb.Del(c.Context(), "settings:"+hash(PEPPER_SETTINGS+userId))
 
-        if ifm := c.Get("if-none-match"); ifm == written {
-            return c.SendStatus(304)
-        }
+		return c.SendStatus(204)
+	})
+	// #endregion
 
-        c.Set("Content-Type", "application/octet-stream")
-        c.Set("ETag", written)
-        return c.Send(value)
-    })
+	// #region discord oauth
+	app.Get("/oauth/callback", func(c *fiber.Ctx) error {
+		code := c.Query("code")
 
-    app.Put("/settings", func(c *fiber.Ctx) error {
-        if (c.Get("Content-Type") != "application/octet-stream") {
-            return c.Status(415).JSON(&fiber.Map{
-                "error": "Content type must be application/octet-stream",
-            })
-        }
+		if code == "" {
+			return c.Status(400).JSON(&fiber.Map{
+				"error": "Missing code",
+			})
+		}
 
-        if (len(c.Body()) > SIZE_LIMIT) {
-            return c.Status(413).JSON(&fiber.Map{
-                "error": "Settings are too large",
-            })
-        }
+		var accessTokenResult DiscordAccessTokenResult
 
-        userId := c.Context().UserValue("userId").(string)
+		res, err := req.R().SetFormData(map[string]string{
+			"client_id":     DISCORD_CLIENT_ID,
+			"client_secret": DISCORD_CLIENT_SECRET,
+			"grant_type":    "authorization_code",
+			"code":          code,
+			"redirect_uri":  DISCORD_REDIRECT_URI,
+			"scope":         "identify",
+		}).SetSuccessResult(&accessTokenResult).Post("https://discord.com/api/oauth2/token")
 
-        now := time.Now().UnixMilli()
+		if err != nil {
+			return c.Status(500).JSON(&fiber.Map{
+				"error": "Failed to request access token",
+			})
+		}
 
-        _, err := rdb.HSet(c.Context(), "settings:" + hash(PEPPER_SETTINGS + userId), map[string]interface{}{
-            "value": c.Body(),
-            "written": now,
-        }).Result()
+		if res.IsErrorState() {
+			return c.Status(400).JSON(&fiber.Map{
+				"error": "Invalid code",
+			})
+		}
 
-        if err != nil {
-            panic(err)
-        }
+		accessToken := accessTokenResult.AccessToken
 
-        return c.JSON(&fiber.Map{
-            "written": now,
-        })
-    })
+		var userResult DiscordUserResult
 
-    app.Delete("/settings", func(c *fiber.Ctx) error {
-        userId := c.Context().UserValue("userId").(string)
+		res, err = req.R().SetHeaders(map[string]string{
+			"Authorization": "Bearer " + accessToken,
+		}).SetSuccessResult(&userResult).Get("https://discord.com/api/users/@me")
 
-        rdb.Del(c.Context(), "settings:" + hash(PEPPER_SETTINGS + userId))
+		if err != nil {
+			return c.Status(500).JSON(&fiber.Map{
+				"error": "Failed to request user",
+			})
+		}
 
-        return c.SendStatus(204)
-    })
-    // #endregion
+		if res.IsErrorState() {
+			return c.Status(500).JSON(&fiber.Map{
+				"error": "Failed to request user",
+			})
+		}
 
-    // #region discord oauth
-    app.Get("/oauth/callback", func(c *fiber.Ctx) error {
-        code := c.Query("code")
+		userId := userResult.Id
 
-        if code == "" {
-            return c.Status(400).JSON(&fiber.Map{
-                "error": "Missing code",
-            })
-        }
+		secret, err := rdb.Get(c.Context(), "secrets:"+hash(PEPPER_SECRETS+userId)).Result()
 
-        var accessTokenResult DiscordAccessTokenResult
+		if err == redis.Nil {
+			key := make([]byte, 48)
 
-        res, err := req.R().SetFormData(map[string]string{
-            "client_id": DISCORD_CLIENT_ID,
-            "client_secret": DISCORD_CLIENT_SECRET,
-            "grant_type": "authorization_code",
-            "code": code,
-            "redirect_uri": DISCORD_REDIRECT_URI,
-            "scope": "identify",
-        }).SetSuccessResult(&accessTokenResult).Post("https://discord.com/api/oauth2/token")
+			_, err := rand.Read(key)
+			if err != nil {
+				return c.Status(500).JSON(&fiber.Map{
+					"error": "Failed to generate secret",
+				})
+			}
 
-        if err != nil {
-            return c.Status(500).JSON(&fiber.Map{
-                "error": "Failed to request access token",
-            })
-        }
+			secret = hex.EncodeToString(key)
+			rdb.Set(c.Context(), "secrets:"+hash(PEPPER_SECRETS+userId), secret, 0)
+		}
 
-        if res.IsErrorState() {
-            return c.Status(400).JSON(&fiber.Map{
-                "error": "Invalid code",
-            })
-        }
+		return c.JSON(&fiber.Map{
+			"secret": secret,
+		})
+	})
 
-        accessToken := accessTokenResult.AccessToken
+	app.Get("/oauth/settings", func(c *fiber.Ctx) error {
+		return c.JSON(&fiber.Map{
+			"clientId":    DISCORD_CLIENT_ID,
+			"redirectUri": DISCORD_REDIRECT_URI,
+		})
+	})
+	// #endregion
 
-        var userResult DiscordUserResult
+	// #region erase all
+	app.Delete("/", requireAuth, func(c *fiber.Ctx) error {
+		userId := c.Context().UserValue("userId").(string)
 
-        res, err = req.R().SetHeaders(map[string]string{
-            "Authorization": "Bearer " + accessToken,
-        }).SetSuccessResult(&userResult).Get("https://discord.com/api/users/@me")
+		rdb.Del(c.Context(), "settings:"+hash(PEPPER_SETTINGS+userId))
+        rdb.Del(c.Context(), "secret"+hash(PEPPER_SECRETS+userId))
 
-        if err != nil {
-            return c.Status(500).JSON(&fiber.Map{
-                "error": "Failed to request user",
-            })
-        }
+		return c.SendStatus(204)
+	})
+	// #endregion
 
-        if res.IsErrorState() {
-            return c.Status(500).JSON(&fiber.Map{
-                "error": "Failed to request user",
-            })
-        }
+	app.Get("/", func(c *fiber.Ctx) error {
+		return c.Redirect(ROOT_REDIRECT, 307)
+	})
 
-        userId := userResult.Id
-
-        secret, err := rdb.Get(c.Context(), "secrets:" + hash(PEPPER_SECRETS + userId)).Result()
-
-        if err == redis.Nil {
-            key := make([]byte, 48)
-
-            _, err := rand.Read(key)
-            if err != nil {
-                return c.Status(500).JSON(&fiber.Map{
-                    "error": "Failed to generate secret",
-                })
-            }
-
-            secret = hex.EncodeToString(key)
-            rdb.Set(c.Context(), "secrets:" + hash(PEPPER_SECRETS + userId), secret, 0)
-        }
-
-        return c.JSON(&fiber.Map{
-            "secret": secret,
-        })
-    })
-
-    app.Get("/oauth/settings", func(c *fiber.Ctx) error {
-        return c.JSON(&fiber.Map{
-            "clientId": DISCORD_CLIENT_ID,
-            "redirectUri": DISCORD_REDIRECT_URI,
-        })
-    })
-    // #endregion
-
-    app.Get("/", func(c *fiber.Ctx) error {
-        return c.Redirect(ROOT_REDIRECT, 307)
-    })
-
-    app.Listen(HOST + ":" + PORT)
+	app.Listen(HOST + ":" + PORT)
 }
