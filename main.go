@@ -293,7 +293,7 @@ func main() {
 	// #endregion
 
 	app.Get("/", func(c *fiber.Ctx) error {
-		return c.Redirect(ROOT_REDIRECT, 307)
+		return c.Redirect(ROOT_REDIRECT, 303)
 	})
 
 	app.Listen(HOST + ":" + PORT)
