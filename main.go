@@ -57,9 +57,9 @@ func requireAuth(c *fiber.Ctx) error {
 		})
 	}
 
-	// decode base64 token and split by :
-	// token[0] = username
-	// token[1] = password
+	// decode base64 token and split by:
+	// token[0] = secret
+	// token[1] = user id
 	token, err := base64.StdEncoding.DecodeString(authToken)
 
 	if err != nil {
@@ -77,8 +77,8 @@ func requireAuth(c *fiber.Ctx) error {
 		})
 	}
 
-	userId := tokenSplit[0]
-	secret := tokenSplit[1]
+	secret := tokenSplit[0]
+	userId := tokenSplit[1]
 
 	storedSecret, err := rdb.Get(c.Context(), "secrets:"+hash(os.Getenv("PEPPER_SECRETS")+userId)).Result()
 
