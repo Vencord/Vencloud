@@ -26,4 +26,5 @@ up to you to manage.
          - HOST_PORT:8080
    ```
 5. `docker compose up -d`
-6. Configure a reverse proxy to serve the backend as `/v1/` on whatever domain you please.
+
+Please note that, due to mixed content requirements, you will need HTTPS on your self-hosted instance.
