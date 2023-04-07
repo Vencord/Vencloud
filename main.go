@@ -130,9 +130,9 @@ func main() {
 	app.Use(logger.New())
 
 	// #region settings
-	app.All("/settings", requireAuth)
+	app.All("/v1/settings", requireAuth)
 
-	app.Head("/settings", func(c *fiber.Ctx) error {
+	app.Head("/v1/settings", func(c *fiber.Ctx) error {
 		userId := c.Context().UserValue("userId").(string)
 
 		written, err := rdb.HGet(c.Context(), "settings:"+hash(PEPPER_SETTINGS+userId), "written").Result()
@@ -147,7 +147,7 @@ func main() {
 		return c.SendStatus(204)
 	})
 
-	app.Get("/settings", func(c *fiber.Ctx) error {
+	app.Get("/v1/settings", func(c *fiber.Ctx) error {
 		userId := c.Context().UserValue("userId").(string)
 
 		settings, err := rdb.HMGet(c.Context(), "settings:"+hash(PEPPER_SETTINGS+userId), "value", "written").Result()
@@ -173,7 +173,7 @@ func main() {
 		return c.Send(value)
 	})
 
-	app.Put("/settings", func(c *fiber.Ctx) error {
+	app.Put("/v1/settings", func(c *fiber.Ctx) error {
 		if c.Get("Content-Type") != "application/octet-stream" {
 			return c.Status(415).JSON(&fiber.Map{
 				"error": "Content type must be application/octet-stream",
@@ -204,7 +204,7 @@ func main() {
 		})
 	})
 
-	app.Delete("/settings", func(c *fiber.Ctx) error {
+	app.Delete("/v1/settings", func(c *fiber.Ctx) error {
 		userId := c.Context().UserValue("userId").(string)
 
 		rdb.Del(c.Context(), "settings:"+hash(PEPPER_SETTINGS+userId))
@@ -214,7 +214,7 @@ func main() {
 	// #endregion
 
 	// #region discord oauth
-	app.Get("/oauth/callback", func(c *fiber.Ctx) error {
+	app.Get("/v1/oauth/callback", func(c *fiber.Ctx) error {
 		code := c.Query("code")
 
 		if code == "" {
@@ -289,7 +289,7 @@ func main() {
 		})
 	})
 
-	app.Get("/oauth/settings", func(c *fiber.Ctx) error {
+	app.Get("/v1/oauth/settings", func(c *fiber.Ctx) error {
 		return c.JSON(&fiber.Map{
 			"clientId":    DISCORD_CLIENT_ID,
 			"redirectUri": DISCORD_REDIRECT_URI,
@@ -298,7 +298,7 @@ func main() {
 	// #endregion
 
 	// #region erase all
-	app.Delete("/", requireAuth, func(c *fiber.Ctx) error {
+	app.Delete("/v1", requireAuth, func(c *fiber.Ctx) error {
 		userId := c.Context().UserValue("userId").(string)
 
 		rdb.Del(c.Context(), "settings:"+hash(PEPPER_SETTINGS+userId))
@@ -307,6 +307,10 @@ func main() {
 		return c.SendStatus(204)
 	})
 	// #endregion
+
+	app.Get("/v1", func(c *fiber.Ctx) error {
+		return c.Redirect(ROOT_REDIRECT, 303)
+	})
 
 	app.Get("/", func(c *fiber.Ctx) error {
 		return c.Redirect(ROOT_REDIRECT, 303)
