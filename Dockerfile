@@ -6,7 +6,7 @@ ADD go.mod go.sum ./
 RUN go mod download
 
 ADD . ./
-RUN go build -o backend
+RUN CGO_ENABLED=0 go build -o backend
 
 FROM alpine:latest
 
