@@ -282,6 +282,12 @@ func main() {
 
 			secret = hex.EncodeToString(key)
 			rdb.Set(c.Context(), "secrets:"+hash(PEPPER_SECRETS+userId), secret, 0)
+		} else if err != nil {
+			// Print out the error message so we can debug it
+			fmt.Println(err)
+			return c.Status(500).JSON(&fiber.Map{
+				"error": "Failed to get secret",
+			})
 		}
 
 		return c.JSON(&fiber.Map{
