@@ -282,6 +282,8 @@ func main() {
 
 			secret = hex.EncodeToString(key)
 			rdb.Set(c.Context(), "secrets:"+hash(PEPPER_SECRETS+userId), secret, 0)
+		} else if err != nil {
+			panic(err)
 		}
 
 		return c.JSON(&fiber.Map{
