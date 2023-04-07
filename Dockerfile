@@ -12,5 +12,7 @@ FROM alpine:latest
 
 RUN apk --no-cache add ca-certificates
 
-COPY --from=builder /app/backend /backend
-CMD ["/backend"]
+WORKDIR /root/
+
+COPY --from=builder /app/backend ./
+CMD ["./backend"]
