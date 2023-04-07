@@ -311,7 +311,9 @@ func main() {
 	// #endregion
 
 	app.Get("/v1", func(c *fiber.Ctx) error {
-		return c.Redirect(ROOT_REDIRECT, 303)
+		return c.JSON(&fiber.Map{
+            "ping": "pong",
+        })
 	})
 
 	app.Get("/", func(c *fiber.Ctx) error {
