@@ -15,7 +15,7 @@ up to you to manage.
     like your own personal homepage.
   - `DISCORD_*` should be configured with your Discord application.
   - `PEPPER_*` should be unique values. These provide extra anonymity and make it more difficult to get user
-    info.
+    info. It [is recommended](https://stackoverflow.com/a/9622855) you use at least 32 bytes of randomness, e.g. through `openssl rand 32 -hex`
   - `SIZE_LIMIT` is up to you, but should usually be left as default. This is for the settings sync and how
     much data a user can store.
 4. Create a `docker-compose.override.yml` that maps your ports, like so:
