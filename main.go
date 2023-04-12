@@ -42,6 +42,8 @@ type DiscordUserResult struct {
 	Id string `json:"id"`
 }
 
+var ALLOWED_USERS map[string]bool
+
 var rdb *redis.Client
 
 func hash(s string) string {
@@ -80,6 +82,12 @@ func requireAuth(c *fiber.Ctx) error {
 	secret := tokenSplit[0]
 	userId := tokenSplit[1]
 
+	if ALLOWED_USERS != nil && c.Path() != "/v1" && c.Method() != "DELETE" && !ALLOWED_USERS[userId] {
+		return c.Status(403).JSON(&fiber.Map{
+			"error": "User is not whitelisted",
+		})
+	}
+
 	storedSecret, err := rdb.Get(c.Context(), "secrets:"+hash(os.Getenv("PEPPER_SECRETS")+userId)).Result()
 
 	if err == redis.Nil {
@@ -117,6 +125,14 @@ func main() {
 
 	slRaw, _ := strconv.ParseInt(os.Getenv("SIZE_LIMIT"), 10, 0)
 	SIZE_LIMIT := int(slRaw)
+
+	auRaw := os.Getenv("ALLOWED_USERS")
+	if auRaw != "" {
+		ALLOWED_USERS = make(map[string]bool)
+		for _, userId := range strings.Split(auRaw, ",") {
+			ALLOWED_USERS[userId] = true
+		}
+	}
 
 	app := fiber.New()
 	rdb = redis.NewClient(&redis.Options{
@@ -267,6 +283,12 @@ func main() {
 		}
 
 		userId := userResult.Id
+
+		if ALLOWED_USERS != nil && !ALLOWED_USERS[userId] {
+			return c.Status(403).JSON(&fiber.Map{
+				"error": "User is not whitelisted",
+			})
+		}
 
 		secret, err := rdb.Get(c.Context(), "secrets:"+hash(PEPPER_SECRETS+userId)).Result()
 
