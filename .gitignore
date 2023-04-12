@@ -5,3 +5,7 @@
 
 redis-data
 docker-compose.override.yml
+
+# binaries
+Backend
+Backend.exe
