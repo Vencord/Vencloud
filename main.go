@@ -326,7 +326,7 @@ func main() {
 		userId := c.Context().UserValue("userId").(string)
 
 		rdb.Del(c.Context(), "settings:"+hash(PEPPER_SETTINGS+userId))
-        rdb.Del(c.Context(), "secret"+hash(PEPPER_SECRETS+userId))
+		rdb.Del(c.Context(), "secret"+hash(PEPPER_SECRETS+userId))
 
 		return c.SendStatus(204)
 	})
@@ -334,8 +334,8 @@ func main() {
 
 	app.Get("/v1", func(c *fiber.Ctx) error {
 		return c.JSON(&fiber.Map{
-            "ping": "pong",
-        })
+			"ping": "pong",
+		})
 	})
 
 	app.Get("/", func(c *fiber.Ctx) error {
