@@ -142,6 +142,7 @@ func main() {
 
 	app.Use(cors.New(cors.Config{
 		ExposeHeaders: "ETag",
+        AllowOrigins: "https://discord.com,https://ptb.discord.com,https://canary.discord.com",
 	}))
 	app.Use(logger.New())
 
