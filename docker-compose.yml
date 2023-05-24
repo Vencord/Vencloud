@@ -7,6 +7,13 @@ services:
         restart: always
         volumes:
             - ./redis-data:/data
+        environment:
+            REDIS_ARGS: --save 300 1 60 10
+        healthcheck:
+            test: ["CMD", "redis-cli", "ping"]
+            interval: 5s
+            timeout: 5s
+            retries: 5
 
     backend:
         image: vencord/backend
@@ -15,4 +22,5 @@ services:
         env_file:
             - .env
         depends_on:
-            - redis
+            redis:
+                condition: service_healthy
