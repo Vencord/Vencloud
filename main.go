@@ -327,7 +327,7 @@ func main() {
 		userId := c.Context().UserValue("userId").(string)
 
 		rdb.Del(c.Context(), "settings:"+hash(PEPPER_SETTINGS+userId))
-		rdb.Del(c.Context(), "secret"+hash(PEPPER_SECRETS+userId))
+		rdb.Del(c.Context(), "secrets:"+hash(PEPPER_SECRETS+userId))
 
 		return c.SendStatus(204)
 	})
