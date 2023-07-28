@@ -17,6 +17,7 @@
 package main
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/sha1"
 	"encoding/base64"
@@ -27,10 +28,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ansrivas/fiberprometheus/v2"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	reqHttp "github.com/imroc/req/v3"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -45,6 +49,15 @@ type DiscordUserResult struct {
 var ALLOWED_USERS map[string]bool
 
 var rdb *redis.Client
+var (
+    accountsRegistered = promauto.NewGaugeFunc(prometheus.GaugeOpts{
+        Name: "vencord_accounts_registered",
+        Help: "The total number of accounts registered",
+    }, func() float64 {
+        // TODO: this is very unoptimized and may cripple the database if there are many keys in future
+        return float64(len(rdb.Keys(context.Background(), "secrets:").Val()))
+    })
+)
 
 func hash(s string) string {
 	return fmt.Sprintf("%x", sha1.Sum([]byte(s)))
@@ -139,6 +152,12 @@ func main() {
 		Addr: REDIS_URI,
 	})
 	req := reqHttp.C()
+
+    if os.Getenv("PROMETHEUS") == "true" {
+        prometheus := fiberprometheus.New("vencord")
+        prometheus.RegisterAt(app, "/metrics")
+        app.Use(prometheus.Middleware)
+    }
 
 	app.Use(cors.New(cors.Config{
 		ExposeHeaders: "ETag",
