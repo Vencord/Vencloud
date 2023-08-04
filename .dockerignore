@@ -1,2 +1,27 @@
+# os related
+.DS_Store
+Thumbs.db
+
+# editors
 .vscode/
+.idea/
+.fleet/
+
+# secrets
 .env
+
+# Docker
+docker-compose.yml
+docker-compose.*.yml
+Dockerfile
+redis-data/ # redis data mountpoint from docker-compose.yml
+
+# git
+.git/
+.gitignore
+.gitattributes
+
+# binaries
+backend
+Backend
+Backend.exe
