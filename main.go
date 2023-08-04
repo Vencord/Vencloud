@@ -54,8 +54,18 @@ var (
         Name: "vencord_accounts_registered",
         Help: "The total number of accounts registered",
     }, func() float64 {
-        // TODO: this is very unoptimized and may cripple the database if there are many keys in future
-        return float64(len(rdb.Keys(context.Background(), "secrets:").Val()))
+        iter := rdb.Scan(context.Background(), 0, "secrets:*", 0).Iterator()
+		var count int64
+
+		for iter.Next(context.Background()) {
+			count++
+		}
+
+		if err := iter.Err(); err != nil {
+			panic(err)
+		}
+
+		return float64(count)
     })
 )
 
