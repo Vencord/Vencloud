@@ -36,8 +36,6 @@ import (
 	"github.com/vencord/backend/util"
 )
 
-var rdb *redis.Client
-
 func requireAuth(c *fiber.Ctx) error {
 	authToken := c.Get("Authorization")
 
@@ -76,7 +74,7 @@ func requireAuth(c *fiber.Ctx) error {
 		})
 	}
 
-	storedSecret, err := rdb.Get(c.Context(), "secrets:"+util.Hash(g.PEPPER_SECRETS+userId)).Result()
+	storedSecret, err := g.RDB.Get(c.Context(), "secrets:"+util.Hash(g.PEPPER_SECRETS+userId)).Result()
 
 	if err == redis.Nil {
 		return c.Status(401).JSON(&fiber.Map{
@@ -120,7 +118,7 @@ func main() {
 			Name: "vencord_accounts_registered",
 			Help: "The total number of accounts registered",
 		}, func() float64 {
-			iter := rdb.Scan(context.Background(), 0, "secrets:*", 0).Iterator()
+			iter := g.RDB.Scan(context.Background(), 0, "secrets:*", 0).Iterator()
 			var count int64
 
 			for iter.Next(context.Background()) {
