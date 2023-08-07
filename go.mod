@@ -1,4 +1,4 @@
-module github.com/Vencord/Backend
+module github.com/vencord/backend
 
 go 1.20
 
