@@ -111,7 +111,7 @@ func main() {
 	}
 
 	app := fiber.New()
-	rdb = redis.NewClient(&redis.Options{
+	g.RDB = redis.NewClient(&redis.Options{
 		Addr: g.REDIS_URI,
 	})
 
