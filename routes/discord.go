@@ -44,6 +44,7 @@ func GETOAuthCallback(c *fiber.Ctx) error {
 	}).SetSuccessResult(&accessTokenResult).Post("https://discord.com/api/oauth2/token")
 
 	if err != nil {
+        c.Context().Logger().Printf("Failed to request access token: %v", err)
 		return c.Status(500).JSON(&fiber.Map{
 			"error": "Failed to request access token",
 		})
@@ -64,6 +65,7 @@ func GETOAuthCallback(c *fiber.Ctx) error {
 	}).SetSuccessResult(&userResult).Get("https://discord.com/api/users/@me")
 
 	if err != nil {
+        c.Context().Logger().Printf("Failed to request user: %v", err)
 		return c.Status(500).JSON(&fiber.Map{
 			"error": "Failed to request user",
 		})
@@ -90,6 +92,7 @@ func GETOAuthCallback(c *fiber.Ctx) error {
 
 		_, err := rand.Read(key)
 		if err != nil {
+            c.Context().Logger().Printf("Failed to generate secret: %v", err)
 			return c.Status(500).JSON(&fiber.Map{
 				"error": "Failed to generate secret",
 			})
