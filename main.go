@@ -139,7 +139,7 @@ func main() {
 
 	app.Use(cors.New(cors.Config{
 		ExposeHeaders: "ETag",
-		AllowOrigins:  "https://discord.com,https://ptb.discord.com,https://canary.discord.com",
+		AllowOrigins:  "https://discord.com,https://ptb.discord.com,https://canary.discord.com,https://discordapp.com,https://ptb.discordapp.com,https://canary.discordapp.com",
 	}))
 	app.Use(logger.New())
 
