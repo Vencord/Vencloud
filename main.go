@@ -108,7 +108,10 @@ func main() {
 		}
 	}
 
-	app := fiber.New()
+	app := fiber.New(fiber.Config{
+        ProxyHeader: os.Getenv("PROXY_HEADER"),
+    })
+
 	g.RDB = redis.NewClient(&redis.Options{
 		Addr: g.REDIS_URI,
 	})
