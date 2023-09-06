@@ -15,9 +15,13 @@ up to you to manage.
     like your own personal homepage.
   - `DISCORD_*` should be configured with your Discord application. The redirect URI is `https://<yourdomain>/v1/oauth/callback`.
   - `PEPPER_*` should be unique values. These provide extra anonymity and make it more difficult to get user
-    info. It [is recommended](https://stackoverflow.com/a/9622855) you use at least 32 bytes of randomness, e.g. through `openssl rand -hex 32`.
+    info. It [is recommended](https://stackoverflow.com/a/9622855) you use at least 32 bytes of randomness, e.g. through
+    `openssl rand -hex 32`.
   - `SIZE_LIMIT` is up to you, but should usually be left as default. This is for the settings sync and how
     much data a user can store.
+  - `ALLOWED_USERS` restricts what users can use this API instance for operations like settings sync.
+  - `PROMETHEUS` controls whether or not to expose the `/metrics` endpoint.
+  - `PROXY_HEADER` should be used if you're running it behind a reverse proxy or another service (i.e., Cloudflare).
 4. Create a `docker-compose.override.yml` that maps your ports, like so:
    ```yaml
    services:
