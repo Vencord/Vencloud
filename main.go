@@ -22,6 +22,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/ansrivas/fiberprometheus/v2"
 	"github.com/gofiber/fiber/v2"
@@ -109,8 +110,8 @@ func main() {
 	}
 
 	app := fiber.New(fiber.Config{
-        ProxyHeader: os.Getenv("PROXY_HEADER"),
-    })
+		ProxyHeader: os.Getenv("PROXY_HEADER"),
+	})
 
 	g.RDB = redis.NewClient(&redis.Options{
 		Addr: g.REDIS_URI,
@@ -134,6 +135,61 @@ func main() {
 
 			return float64(count)
 		})
+
+        promUpdate := time.NewTicker(1 * time.Minute)
+
+        activeUsers := promauto.NewGaugeVec(prometheus.GaugeOpts{
+            Name: "vencord_active_users",
+            Help: "The total number of active Vencord users",
+        }, []string{"version", "operating_system"})
+
+        pluginsInUse := promauto.NewGaugeVec(prometheus.GaugeOpts{
+            Name: "vencord_plugins_in_use",
+            Help: "The total number of current plugins in use by Vencord users",
+        }, []string{"name"})
+
+        go func() {
+            for {
+                <-promUpdate.C
+
+                iter := g.RDB.Scan(context.Background(), 0, "telemetry:*", 0).Iterator()
+
+                userStats := make(map[string]map[string]int64)
+                pluginStats := make(map[string]int64)
+
+				for iter.Next(context.Background()) {
+					telemetryData := g.RDB.HMGet(context.Background(), iter.Val(), "version", "plugins", "operatingSystem").Val()
+
+                    version := telemetryData[0].(string)
+                    plugins := telemetryData[1].([]string)
+                    operatingSystem := telemetryData[2].(string)
+
+                    if userStats[version] == nil {
+                        userStats[version] = make(map[string]int64)
+                    }
+
+                    userStats[version][operatingSystem]++
+
+                    for _, plugin := range plugins {
+                        pluginStats[plugin]++
+                    }
+				}
+
+				if err := iter.Err(); err != nil {
+					panic(err)
+				}
+
+                for version, operatingSystems := range userStats {
+                    for operatingSystem, count := range operatingSystems {
+                        activeUsers.WithLabelValues(version, operatingSystem).Set(float64(count))
+                    }
+                }
+
+                for plugin, count := range pluginStats {
+                    pluginsInUse.WithLabelValues(plugin).Set(float64(count))
+                }
+            }
+        }()
 
 		prometheus := fiberprometheus.New("vencord")
 		prometheus.RegisterAt(app, "/metrics")
@@ -162,6 +218,12 @@ func main() {
 
 	// #region erase all
 	app.Delete("/v1", requireAuth, routes.DELETE)
+	// #endregion
+
+	// #region telemetry
+	if os.Getenv("TELEMETRY") == "true" {
+		app.Post("/v1/telemetry", routes.POSTTelemetry)
+	}
 	// #endregion
 
 	app.Get("/v1", routes.GET)
