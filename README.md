@@ -27,8 +27,8 @@ up to you to manage.
    services:
      backend:
        ports:
-         - HOST_PORT:8080
+         - "8080:8080"
    ```
-5. `docker compose up -d`
+5. `docker-compose up -d`
 
 Please note that, due to mixed content requirements, you will need HTTPS on your self-hosted instance.
