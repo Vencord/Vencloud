@@ -13,6 +13,7 @@ services:
             interval: 5s
             timeout: 5s
             retries: 5
+        hostname: redis
 
     backend:
         image: vencord/backend
@@ -24,6 +25,7 @@ services:
         environment:
             PORT: 8080
             HOST: ${HOST}
+            REDIS_URI: ${REDIS_URI}
             ROOT_REDIRECT: ${ROOT_REDIRECT}
             DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID}
             DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET}
