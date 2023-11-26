@@ -21,3 +21,17 @@ services:
         depends_on:
             redis:
                 condition: service_healthy
+        environment:
+            PORT: ${PORT}
+            HOST: ${HOST}
+            ROOT_REDIRECT: ${ROOT_REDIRECT}
+            DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID}
+            DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET}
+            DISCORD_REDIRECT_URI: ${DISCORD_REDIRECT_URI}
+            PEPPER_SECRETS: ${PEPPER_SECRETS}
+            PEPPER_SETTINGS: ${PEPPER_SETTINGS}
+            SIZE_LIMIT: ${SIZE_LIMIT}
+            ALLOWED_USERS: ${ALLOWED_USERS}
+            PROMETHEUS: ${PROMETHEUS}
+        ports:
+            ${PORT}:${PORT}/tcp
