@@ -18,22 +18,8 @@ services:
         image: vencord/backend
         build: .
         restart: always
+        env_file:
+            - .env
         depends_on:
             redis:
                 condition: service_healthy
-        environment:
-            PORT: 8080
-            HOST: ${HOST}
-            REDIS_URI: ${REDIS_URI}
-            ROOT_REDIRECT: ${ROOT_REDIRECT}
-            DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID}
-            DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET}
-            DISCORD_REDIRECT_URI: ${DISCORD_REDIRECT_URI}
-            PEPPER_SECRETS: ${PEPPER_SECRETS}
-            PEPPER_SETTINGS: ${PEPPER_SETTINGS}
-            SIZE_LIMIT: ${SIZE_LIMIT}
-            ALLOWED_USERS: ${ALLOWED_USERS}
-            PROMETHEUS: ${PROMETHEUS}
-            PROXY_HEADER: ${PROXY_HEADER}
-        ports:
-            - ${PORT}:8080/tcp
