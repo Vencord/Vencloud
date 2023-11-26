@@ -34,5 +34,6 @@ services:
             SIZE_LIMIT: ${SIZE_LIMIT}
             ALLOWED_USERS: ${ALLOWED_USERS}
             PROMETHEUS: ${PROMETHEUS}
+            PROXY_HEADER: ${PROXY_HEADER}
         ports:
             - ${PORT}:8080/tcp
