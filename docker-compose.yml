@@ -34,4 +34,4 @@ services:
             ALLOWED_USERS: ${ALLOWED_USERS}
             PROMETHEUS: ${PROMETHEUS}
         ports:
-            ${PORT}:${PORT}/tcp
+            - ${PORT}:${PORT}/tcp
