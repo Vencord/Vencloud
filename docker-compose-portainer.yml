@@ -25,6 +25,7 @@ services:
                 condition: service_healthy
         environment:
             PORT: 8080
+            HOST: 0.0.0.0
             REDIS_URI: redis:6379
         ports:
             - ${PORT}:8080/tcp
