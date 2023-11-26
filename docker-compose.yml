@@ -22,7 +22,7 @@ services:
             redis:
                 condition: service_healthy
         environment:
-            PORT: ${PORT}
+            PORT: 8080
             HOST: ${HOST}
             ROOT_REDIRECT: ${ROOT_REDIRECT}
             DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID}
@@ -34,4 +34,4 @@ services:
             ALLOWED_USERS: ${ALLOWED_USERS}
             PROMETHEUS: ${PROMETHEUS}
         ports:
-            - ${PORT}:${PORT}/tcp
+            - ${PORT}:8080/tcp
