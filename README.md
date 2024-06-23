@@ -47,7 +47,8 @@ Don't forget to direct your terminal to the Vencloud directory, e.g. via `cd Ven
 2. Build the code: `go build -o backend`
 3. Start the server:
    ```sh
-   source .env
+   # Load the .env file
+   export $(grep -v '^#' .env | xargs)
 
    ./backend
    ```
