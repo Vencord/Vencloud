@@ -39,6 +39,12 @@ Don't forget to direct your terminal to the Vencloud directory, e.g. via `cd Ven
 
 #### Natively
 
+Please note that only the docker setup is supported by us.
+The native instructions are only provided for advanced users and we can't provide support if you get stuck!
+When in doubt, please use the docker setup.
+
+Alongisde the Vencloud setup, you will also have to setup Redis. This will not be covered here, please refer to the Redis documentation.
+
 > [!WARNING]
 > At the current moment, Go 21 is not yet supported, you'll need Go 20!
 > An easy way to get Go 20 is to run `go install golang.org/dl/go1.20.0@latest` and then use the `go1.20` command instead of `go`
