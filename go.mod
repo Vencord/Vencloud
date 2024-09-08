@@ -9,7 +9,7 @@ require (
 	github.com/gofiber/fiber/v2 v2.52.5
 	github.com/imroc/req/v3 v3.44.0
 	github.com/prometheus/client_golang v1.19.0
-	github.com/redis/go-redis/v9 v9.0.2
+	github.com/redis/go-redis/v9 v9.6.1
 )
 
 require (
