@@ -4,7 +4,7 @@ on:
     push:
         branches:
             - dev
-    
+
     pull_request:
         branches:
             - main
@@ -22,7 +22,7 @@ jobs:
             - name: Setup Go
               uses: actions/setup-go@v5
               with:
-                  go-version: '1.20'
+                  go-version: '1.23'
 
             - name: Install dependencies
               run: go mod download
