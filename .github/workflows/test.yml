@@ -1,0 +1,31 @@
+name: Test
+
+on:
+    push:
+        branches:
+            - dev
+    
+    pull_request:
+        branches:
+            - main
+            - dev
+
+    merge_group:
+
+jobs:
+    Test:
+        runs-on: ubuntu-latest
+
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Setup Go
+              uses: actions/setup-go@v5
+              with:
+                  go-version: '1.20'
+
+            - name: Install dependencies
+              run: go mod download
+
+            - name: Build
+              run: go build -v -o ./backend
