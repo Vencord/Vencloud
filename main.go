@@ -114,6 +114,7 @@ func main() {
 
 	g.RDB = redis.NewClient(&redis.Options{
 		Addr: g.REDIS_URI,
+		Password: g.REDIS_PASS,
 	})
 
 	if os.Getenv("PROMETHEUS") == "true" {

@@ -12,6 +12,7 @@ var (
 	PORT = os.Getenv("PORT")
 
 	REDIS_URI = os.Getenv("REDIS_URI")
+	REDIS_PASS = os.Getenv("REDIS_PASS")
 
 	ROOT_REDIRECT = os.Getenv("ROOT_REDIRECT")
 
