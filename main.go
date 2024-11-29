@@ -81,6 +81,11 @@ func requireAuth(c *fiber.Ctx) error {
 			"error": "Invalid authorization",
 		})
 	} else if err != nil {
+		if err.Error() == "ERR invalid password" || err.Error() == "NOAUTH Authentication required." {
+			return c.Status(401).JSON(&fiber.Map{
+				"error": "Redis authentication failed",
+			})
+		}
 		panic(err)
 	}
 
@@ -114,6 +119,7 @@ func main() {
 
 	g.RDB = redis.NewClient(&redis.Options{
 		Addr: g.REDIS_URI,
+		Password: g.REDIS_PASS,
 	})
 
 	if os.Getenv("PROMETHEUS") == "true" {
