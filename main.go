@@ -114,8 +114,8 @@ func main() {
 	}
 
 	app := fiber.New(fiber.Config{
-        ProxyHeader: os.Getenv("PROXY_HEADER"),
-    })
+		ProxyHeader: os.Getenv("PROXY_HEADER"),
+	})
 
 	g.RDB = redis.NewClient(&redis.Options{
 		Addr: g.REDIS_URI,
@@ -150,6 +150,11 @@ func main() {
 		ExposeHeaders: "ETag",
 		AllowOrigins:  "https://discord.com,https://ptb.discord.com,https://canary.discord.com,https://discordapp.com,https://ptb.discordapp.com,https://canary.discordapp.com",
 	}))
+
+	// Add the docker health endpoint before the logger middleware, such that
+	// it doesn't spam the logs full with it
+	app.Get("/v1", routes.GET)
+
 	app.Use(logger.New())
 
 	// #region settings
@@ -169,8 +174,6 @@ func main() {
 	// #region erase all
 	app.Delete("/v1", requireAuth, routes.DELETE)
 	// #endregion
-
-	app.Get("/v1", routes.GET)
 
 	app.Get("/", func(c *fiber.Ctx) error {
 		return c.Redirect(g.ROOT_REDIRECT, 303)
