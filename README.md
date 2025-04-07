@@ -9,7 +9,12 @@ Vencloud is Vencord's API for cloud settings sync!
 
 We provide a Docker build, so you don't need anything installed besides Docker!
 
-### Cloning the Repository
+### Using Docker and GitHub Container Registry
+
+We publish a built, stable image on [GHCR](https://ghcr.io/vencord/vencloud). Pull the image using `ghcr.io/vencord/vencloud`. Use the
+`docker-compose.yml` file we have in this repository as a reference for further setup!
+
+### From Git
 
 First of all, you'll have to clone the source code to a convenient location:
 ```sh
