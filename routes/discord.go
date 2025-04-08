@@ -102,6 +102,11 @@ func GETOAuthCallback(c *fiber.Ctx) error {
 		secret = hex.EncodeToString(key)
 		g.RDB.Set(c.Context(), "secrets:"+util.Hash(g.PEPPER_SECRETS+userId), secret, 0)
 	} else if err != nil {
+		if err.Error() == "ERR invalid password" || err.Error() == "NOAUTH Authentication required." {
+			return c.Status(401).JSON(&fiber.Map{
+				"error": "Redis password is incorrect or missing!",
+			})
+		}
 		panic(err)
 	}
 
