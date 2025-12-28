@@ -48,7 +48,7 @@ Please note that only the docker setup is supported by us.
 The native instructions are only provided for advanced users and we can't provide support if you get stuck!
 When in doubt, please use the docker setup.
 
-Alongisde the Vencloud setup, you will also have to setup Redis. This will not be covered here, please refer to the Redis documentation.
+Alongside the Vencloud setup, you will also have to setup Redis. This will not be covered here, please refer to the Redis documentation.
 
 1. Install the [Go programming language](https://go.dev/dl/)
 2. Build the code: `go build -o backend`
