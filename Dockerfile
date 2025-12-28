@@ -2,11 +2,17 @@ FROM golang:1.23-alpine AS builder
 
 WORKDIR /app
 
+ARG TARGETOS
+ARG TARGETARCH
+
+ENV CGO_ENABLED=0
+
 ADD go.mod go.sum ./
 RUN go mod download
 
 ADD . ./
-RUN go build -o backend
+
+RUN GOOS=$TARGETOS GOARCH=$TARGETARCH go build -o backend
 
 FROM alpine:latest
 
